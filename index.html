@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Triple-F Store – Toko Daging Premium</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Playfair Display', 'serif'],
+            body: ['DM Sans', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50:  '#fff5f0',
+              100: '#ffe0cc',
+              200: '#ffba99',
+              300: '#ff8c5a',
+              400: '#ff6b2b',
+              500: '#e84d0e',
+              600: '#c73d08',
+              700: '#9e2f06',
+              800: '#752204',
+              900: '#4d1602',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { font-family: 'DM Sans', sans-serif; }
+    h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #e84d0e; border-radius: 3px; }
+
+    /* Page transitions */
+    .page { display: none; }
+    .page.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    /* Toast */
+    #toast-container { position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999; display:flex; flex-direction:column; gap:.5rem; }
+    .toast { padding:.75rem 1.25rem; border-radius:.5rem; color:#fff; font-size:.875rem; font-weight:500;
+             animation: slideIn .3s ease; box-shadow:0 4px 12px rgba(0,0,0,.15); }
+    .toast.success { background:#16a34a; }
+    .toast.error   { background:#dc2626; }
+    .toast.info    { background:#2563eb; }
+    @keyframes slideIn { from { opacity:0; transform:translateX(60px); } to { opacity:1; transform:translateX(0); } }
+
+    /* Product card hover */
+    .product-card { transition: transform .2s, box-shadow .2s; }
+    .product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(232,77,14,.18); }
+
+    /* Cart badge pulse */
+    @keyframes pulse-once { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
+    .badge-pulse { animation: pulse-once .3s ease; }
+
+    /* Skeleton loading */
+    .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+                background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius:.5rem; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    .dark .skeleton { background: linear-gradient(90deg,#374151 25%,#4b5563 50%,#374151 75%); background-size:200% 100%; }
+    .dark ::-webkit-scrollbar-track { background:#1f2937; }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 transition-colors duration-300">
+
+<!-- ===================== NAVBAR ===================== -->
+<nav class="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-100 dark:border-gray-700">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+    <!-- Logo -->
+    <button onclick="showPage('home')" class="flex items-center gap-2 group">
+      <div class="w-9 h-9 bg-brand-500 rounded-lg flex items-center justify-center shadow-md group-hover:bg-brand-600 transition">
+        <span class="text-white font-display font-black text-sm">F³</span>
+      </div>
+      <div class="leading-tight">
+        <div class="font-display font-bold text-lg text-brand-600 dark:text-brand-400 leading-none">Triple-F</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500 tracking-widest uppercase leading-none">Store</div>
+      </div>
+    </button>
+
+    <!-- Search bar (desktop) -->
+    <div class="hidden md:flex flex-1 max-w-xs mx-6">
+      <div class="relative w-full">
+        <input id="nav-search" type="text" placeholder="Cari daging..."
+          class="w-full pl-9 pr-4 py-2 rounded-full border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+          oninput="handleSearch(this.value)" onfocus="showPage('products')"/>
+        <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Nav buttons -->
+    <div class="flex items-center gap-1 md:gap-2">
+      <!-- Dark mode toggle -->
+      <button onclick="toggleDark()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Dark mode">
+        <svg id="icon-sun" class="w-5 h-5 hidden text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>
+        </svg>
+        <svg id="icon-moon" class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+        </svg>
+      </button>
+
+      <!-- Wishlist -->
+      <button onclick="showPage('wishlist')" class="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Wishlist">
+        <svg class="w-5 h-5 text-gray-500 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+        </svg>
+        <span id="wishlist-badge" class="absolute -top-1 -right-1 bg-pink-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center hidden">0</span>
+      </button>
+
+      <!-- Cart -->
+      <button onclick="showPage('cart')" class="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition" title="Keranjang">
+        <svg class="w-5 h-5 text-gray-500 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+        <span id="cart-badge" class="absolute -top-1 -right-1 bg-brand-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center hidden">0</span>
+      </button>
+
+      <!-- User / Auth -->
+      <div id="nav-auth" class="flex items-center gap-1"></div>
+    </div>
+  </div>
+
+  <!-- Mobile search -->
+  <div class="md:hidden px-4 pb-3">
+    <div class="relative">
+      <input type="text" placeholder="Cari produk daging..."
+        class="w-full pl-9 pr-4 py-2 rounded-full border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+        oninput="handleSearch(this.value)" onfocus="showPage('products')"/>
+      <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+      </svg>
+    </div>
+  </div>
+</nav>
+
+<!-- ===================== PAGES ===================== -->
+<main class="max-w-6xl mx-auto px-4 py-6 min-h-screen">
+
+  <!-- ===== HOME PAGE ===== -->
+  <div id="page-home" class="page active">
+    <!-- Hero -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 via-brand-500 to-orange-400 text-white p-8 md:p-14 mb-10 shadow-xl">
+      <div class="absolute inset-0 opacity-10" style="background-image:radial-gradient(circle at 20% 80%, white 1px, transparent 1px),radial-gradient(circle at 80% 20%, white 1px, transparent 1px); background-size:40px 40px;"></div>
+      <div class="relative z-10 max-w-xl">
+        <div class="inline-block bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full mb-4 tracking-wider uppercase">🥩 Daging Segar Premium</div>
+        <h1 class="font-display text-4xl md:text-5xl font-black leading-tight mb-4">Triple-F Store<br/><span class="text-orange-200">Kualitas Terbaik</span></h1>
+        <p class="text-orange-100 text-base mb-8 leading-relaxed">Daging sapi, kambing, dan ayam pilihan terbaik. Segar, halal, dan langsung dari peternak terpercaya.</p>
+        <div class="flex gap-3 flex-wrap">
+          <button onclick="showPage('products')" class="bg-white text-brand-600 font-semibold px-6 py-3 rounded-xl hover:bg-orange-50 transition shadow-lg">
+            Belanja Sekarang →
+          </button>
+          <button onclick="showPage('products')" class="border border-white/50 text-white px-6 py-3 rounded-xl hover:bg-white/10 transition">
+            Lihat Katalog
+          </button>
+        </div>
+      </div>
+      <div class="absolute right-6 bottom-4 text-8xl opacity-20 select-none">🥩</div>
+    </div>
+
+    <!-- Category quick links -->
+    <h2 class="font-display text-2xl font-bold mb-5 dark:text-white">Kategori Produk</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+      <button onclick="filterByCategory('Sapi')" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:border-brand-300 hover:shadow-md transition flex flex-col items-center gap-2">
+        <span class="text-4xl">🐄</span>
+        <span class="font-semibold text-gray-700 dark:text-gray-200">Daging Sapi</span>
+      </button>
+      <button onclick="filterByCategory('Kambing')" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:border-brand-300 hover:shadow-md transition flex flex-col items-center gap-2">
+        <span class="text-4xl">🐐</span>
+        <span class="font-semibold text-gray-700 dark:text-gray-200">Daging Kambing</span>
+      </button>
+      <button onclick="filterByCategory('Ayam')" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:border-brand-300 hover:shadow-md transition flex flex-col items-center gap-2">
+        <span class="text-4xl">🐔</span>
+        <span class="font-semibold text-gray-700 dark:text-gray-200">Daging Ayam</span>
+      </button>
+      <button onclick="filterByCategory('Olahan')" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:border-brand-300 hover:shadow-md transition flex flex-col items-center gap-2">
+        <span class="text-4xl">🌭</span>
+        <span class="font-semibold text-gray-700 dark:text-gray-200">Produk Olahan</span>
+      </button>
+    </div>
+
+    <!-- Featured products -->
+    <h2 class="font-display text-2xl font-bold mb-5 dark:text-white">Produk Unggulan</h2>
+    <div id="home-featured" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+  </div>
+
+  <!-- ===== PRODUCTS PAGE ===== -->
+  <div id="page-products" class="page">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <h2 class="font-display text-2xl font-bold dark:text-white">Semua Produk</h2>
+      <div class="flex gap-3 flex-wrap">
+        <select id="filter-category" onchange="applyFilters()"
+          class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+          <option value="">Semua Kategori</option>
+          <option value="Sapi">Daging Sapi</option>
+          <option value="Kambing">Daging Kambing</option>
+          <option value="Ayam">Daging Ayam</option>
+          <option value="Olahan">Produk Olahan</option>
+        </select>
+        <select id="filter-price" onchange="applyFilters()"
+          class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+          <option value="">Semua Harga</option>
+          <option value="0-100000">Di bawah Rp100.000</option>
+          <option value="100000-200000">Rp100.000 – Rp200.000</option>
+          <option value="200000-999999">Di atas Rp200.000</option>
+        </select>
+        <select id="filter-sort" onchange="applyFilters()"
+          class="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+          <option value="">Urutkan</option>
+          <option value="price-asc">Harga: Terendah</option>
+          <option value="price-desc">Harga: Tertinggi</option>
+          <option value="name-asc">Nama: A-Z</option>
+        </select>
+      </div>
+    </div>
+    <div id="search-info" class="hidden mb-3 text-sm text-gray-500 dark:text-gray-400"></div>
+    <div id="product-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+    <div id="no-product" class="hidden text-center py-16 text-gray-400">
+      <div class="text-5xl mb-3">🔍</div>
+      <div class="font-semibold">Produk tidak ditemukan</div>
+    </div>
+  </div>
+
+  <!-- ===== DETAIL PAGE ===== -->
+  <div id="page-detail" class="page">
+    <button onclick="showPage('products')" class="flex items-center gap-2 text-brand-500 hover:text-brand-700 font-medium mb-6 transition">
+      ← Kembali ke Produk
+    </button>
+    <div id="detail-content"></div>
+  </div>
+
+  <!-- ===== CART PAGE ===== -->
+  <div id="page-cart" class="page">
+    <h2 class="font-display text-2xl font-bold mb-6 dark:text-white">🛒 Keranjang Belanja</h2>
+    <div id="cart-empty" class="hidden text-center py-16">
+      <div class="text-6xl mb-4">🛒</div>
+      <p class="text-gray-400 text-lg mb-6">Keranjang kamu masih kosong</p>
+      <button onclick="showPage('products')" class="bg-brand-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-brand-600 transition">Mulai Belanja</button>
+    </div>
+    <div id="cart-content" class="hidden">
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="md:col-span-2 space-y-3" id="cart-items"></div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm h-fit sticky top-20">
+          <h3 class="font-display font-bold text-lg mb-4 dark:text-white">Ringkasan Order</h3>
+          <div class="space-y-2 text-sm mb-4">
+            <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Subtotal</span><span id="cart-subtotal" class="font-medium dark:text-white"></span></div>
+            <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Ongkir</span><span class="text-green-500 font-medium">Gratis</span></div>
+            <div class="border-t border-gray-100 dark:border-gray-700 pt-2 flex justify-between font-bold text-base">
+              <span class="dark:text-white">Total</span><span class="text-brand-600 dark:text-brand-400" id="cart-total"></span>
+            </div>
+          </div>
+          <button onclick="proceedCheckout()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 rounded-xl transition shadow-md">
+            Checkout Sekarang →
+          </button>
+          <button onclick="showPage('products')" class="w-full mt-2 text-brand-500 hover:text-brand-700 text-sm font-medium py-2 transition">
+            Lanjut Belanja
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CHECKOUT PAGE ===== -->
+  <div id="page-checkout" class="page">
+    <button onclick="showPage('cart')" class="flex items-center gap-2 text-brand-500 hover:text-brand-700 font-medium mb-6 transition">← Kembali ke Keranjang</button>
+    <h2 class="font-display text-2xl font-bold mb-6 dark:text-white">📦 Checkout</h2>
+    <div class="grid md:grid-cols-2 gap-6">
+      <!-- Form -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
+        <h3 class="font-semibold text-lg mb-4 dark:text-white">Data Pengiriman</h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Nama Lengkap *</label>
+            <input id="co-name" type="text" placeholder="Masukkan nama lengkap"
+              class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"/>
+            <p id="err-name" class="text-red-500 text-xs mt-1 hidden">Nama wajib diisi</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Alamat Pengiriman *</label>
+            <textarea id="co-address" rows="3" placeholder="Masukkan alamat lengkap"
+              class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 resize-none"></textarea>
+            <p id="err-address" class="text-red-500 text-xs mt-1 hidden">Alamat wajib diisi</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Nomor HP *</label>
+            <input id="co-phone" type="tel" placeholder="Contoh: 08123456789"
+              class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"/>
+            <p id="err-phone" class="text-red-500 text-xs mt-1 hidden">Nomor HP tidak valid</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Metode Pembayaran</label>
+            <select id="co-payment" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="transfer">Transfer Bank</option>
+              <option value="cod">COD (Bayar di Tempat)</option>
+              <option value="ewallet">E-Wallet (GoPay/OVO)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Catatan (opsional)</label>
+            <textarea id="co-note" rows="2" placeholder="Catatan tambahan untuk penjual"
+              class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 resize-none"></textarea>
+          </div>
+        </div>
+      </div>
+      <!-- Order summary -->
+      <div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm mb-4">
+          <h3 class="font-semibold text-lg mb-4 dark:text-white">Ringkasan Pesanan</h3>
+          <div id="checkout-items" class="space-y-3 mb-4"></div>
+          <div class="border-t border-gray-100 dark:border-gray-700 pt-3 space-y-1 text-sm">
+            <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Subtotal</span><span id="co-subtotal" class="font-medium dark:text-white"></span></div>
+            <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Ongkir</span><span class="text-green-500 font-medium">Gratis</span></div>
+            <div class="flex justify-between font-bold text-base pt-1">
+              <span class="dark:text-white">Total</span><span class="text-brand-600 dark:text-brand-400" id="co-total"></span>
+            </div>
+          </div>
+        </div>
+        <button onclick="submitOrder()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-4 rounded-2xl transition shadow-lg text-base">
+          ✅ Konfirmasi Pesanan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ORDER SUCCESS PAGE ===== -->
+  <div id="page-success" class="page">
+    <div class="max-w-md mx-auto text-center py-12">
+      <div class="text-7xl mb-6 animate-bounce">🎉</div>
+      <h2 class="font-display text-3xl font-black text-brand-600 dark:text-brand-400 mb-3">Pesanan Berhasil!</h2>
+      <p class="text-gray-500 dark:text-gray-400 mb-2">ID Transaksi:</p>
+      <div id="order-id-display" class="bg-gray-100 dark:bg-gray-800 rounded-xl px-6 py-3 font-mono font-bold text-brand-600 dark:text-brand-400 text-xl mb-6 inline-block"></div>
+      <div id="order-summary-success" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-5 text-left mb-6 shadow-sm"></div>
+      <div class="flex gap-3 justify-center">
+        <button onclick="showPage('orders')" class="bg-brand-500 text-white px-5 py-3 rounded-xl font-semibold hover:bg-brand-600 transition">Lihat Riwayat</button>
+        <button onclick="showPage('home')" class="border border-gray-200 dark:border-gray-600 px-5 py-3 rounded-xl font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition dark:text-white">Kembali Berbelanja</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ORDER HISTORY PAGE ===== -->
+  <div id="page-orders" class="page">
+    <h2 class="font-display text-2xl font-bold mb-6 dark:text-white">📋 Riwayat Pesanan</h2>
+    <div id="orders-empty" class="hidden text-center py-16">
+      <div class="text-6xl mb-4">📋</div>
+      <p class="text-gray-400 mb-4">Belum ada riwayat pesanan</p>
+      <button onclick="showPage('products')" class="bg-brand-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-brand-600 transition">Mulai Belanja</button>
+    </div>
+    <div id="orders-list" class="space-y-4"></div>
+  </div>
+
+  <!-- ===== WISHLIST PAGE ===== -->
+  <div id="page-wishlist" class="page">
+    <h2 class="font-display text-2xl font-bold mb-6 dark:text-white">❤️ Wishlist</h2>
+    <div id="wishlist-empty" class="hidden text-center py-16">
+      <div class="text-6xl mb-4">💔</div>
+      <p class="text-gray-400 mb-4">Wishlist kamu masih kosong</p>
+      <button onclick="showPage('products')" class="bg-brand-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-brand-600 transition">Temukan Produk</button>
+    </div>
+    <div id="wishlist-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+  </div>
+
+  <!-- ===== LOGIN PAGE ===== -->
+  <div id="page-login" class="page">
+    <div class="max-w-md mx-auto">
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-brand-500 rounded-2xl shadow-lg mb-4">
+          <span class="text-white font-display font-black text-2xl">F³</span>
+        </div>
+        <h2 class="font-display text-3xl font-black dark:text-white">Masuk Akun</h2>
+        <p class="text-gray-400 mt-1">Selamat datang kembali di Triple-F Store</p>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Email</label>
+            <input id="login-email" type="email" placeholder="email@contoh.com"
+              class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"/>
+            <p id="login-err" class="text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Password</label>
+            <input id="login-pass" type="password" placeholder="Minimal 6 karakter"
+              class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+              onkeydown="if(event.key==='Enter') doLogin()"/>
+          </div>
+          <button onclick="doLogin()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 rounded-xl transition shadow-md">
+            Masuk
+          </button>
+        </div>
+        <p class="text-center text-sm text-gray-400 mt-6">
+          Belum punya akun?
+          <button onclick="showPage('register')" class="text-brand-500 hover:text-brand-700 font-semibold ml-1">Daftar Sekarang</button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== REGISTER PAGE ===== -->
+  <div id="page-register" class="page">
+    <div class="max-w-md mx-auto">
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-brand-500 rounded-2xl shadow-lg mb-4">
+          <span class="text-white font-display font-black text-2xl">F³</span>
+        </div>
+        <h2 class="font-display text-3xl font-black dark:text-white">Buat Akun</h2>
+        <p class="text-gray-400 mt-1">Bergabung dengan Triple-F Store</p>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Nama Lengkap</label>
+            <input id="reg-name" type="text" placeholder="Nama kamu"
+              class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"/>
+            <p id="reg-err-name" class="text-red-500 text-xs mt-1 hidden">Nama wajib diisi</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Email</label>
+            <input id="reg-email" type="email" placeholder="email@contoh.com"
+              class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"/>
+            <p id="reg-err-email" class="text-red-500 text-xs mt-1 hidden"></p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Password</label>
+            <input id="reg-pass" type="password" placeholder="Minimal 6 karakter"
+              class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"/>
+            <p id="reg-err-pass" class="text-red-500 text-xs mt-1 hidden">Password minimal 6 karakter</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Konfirmasi Password</label>
+            <input id="reg-pass2" type="password" placeholder="Ulangi password"
+              class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+              onkeydown="if(event.key==='Enter') doRegister()"/>
+            <p id="reg-err-pass2" class="text-red-500 text-xs mt-1 hidden">Password tidak cocok</p>
+          </div>
+          <button onclick="doRegister()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 rounded-xl transition shadow-md">
+            Daftar
+          </button>
+        </div>
+        <p class="text-center text-sm text-gray-400 mt-6">
+          Sudah punya akun?
+          <button onclick="showPage('login')" class="text-brand-500 hover:text-brand-700 font-semibold ml-1">Masuk</button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 mt-12">
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
+          <span class="text-white font-display font-black text-xs">F³</span>
+        </div>
+        <div>
+          <div class="font-display font-bold text-brand-600 dark:text-brand-400">Triple-F Store</div>
+          <div class="text-xs text-gray-400">Daging Premium, Harga Terjangkau</div>
+        </div>
+      </div>
+      <div class="flex gap-6 text-sm text-gray-400">
+        <button onclick="showPage('home')" class="hover:text-brand-500 transition">Home</button>
+        <button onclick="showPage('products')" class="hover:text-brand-500 transition">Produk</button>
+        <button onclick="showPage('orders')" class="hover:text-brand-500 transition">Pesanan</button>
+        <button onclick="showPage('wishlist')" class="hover:text-brand-500 transition">Wishlist</button>
+      </div>
+      <div class="text-xs text-gray-400">© 2026 Triple-F Store. All rights reserved.</div>
+    </div>
+  </div>
+</footer>
+
+<!-- ===================== TOAST CONTAINER ===================== -->
+<div id="toast-container"></div>
+
+<!-- ===================== JAVASCRIPT ===================== -->
+<script>
+// ============================================================
+// DATA PRODUK (JSON dummy data)
+// ============================================================
+const PRODUCTS = [
+  { id:1,  name:"Daging Sapi Has Dalam",    price:135000, image:"https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=400&q=80", category:"Sapi",    description:"Daging sapi has dalam (tenderloin) pilihan. Tekstur lembut, cocok untuk steak dan rendang premium. Berat per 500gr.", rating:4.8, stock:20 },
+  { id:2,  name:"Daging Sapi Iga",          price:115000, image:"https://images.unsplash.com/photo-1544025162-d76594e8bb42?w=400&q=80", category:"Sapi",    description:"Iga sapi segar berkualitas tinggi. Ideal untuk sup iga, soto, dan barbekyu. Berat per 500gr.", rating:4.7, stock:15 },
+  { id:3,  name:"Daging Sapi Giling",       price:80000,  image:"https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=400&q=80", category:"Sapi",    description:"Daging sapi giling segar, rendah lemak. Cocok untuk bakso, burger, dan bolognese. Berat per 500gr.", rating:4.6, stock:30 },
+  { id:4,  name:"Daging Sapi Sengkel",      price:95000,  image:"https://images.unsplash.com/photo-1529694157872-4e0c0f3b238b?w=400&q=80", category:"Sapi",    description:"Sengkel sapi untuk semur dan opor. Dagingnya berserat dan kaya kolagen. Berat per 500gr.", rating:4.5, stock:18 },
+  { id:5,  name:"Daging Kambing Muda",      price:110000, image:"https://images.unsplash.com/photo-1551326844-4df70f2d7ee8?w=400&q=80", category:"Kambing",  description:"Daging kambing muda, minim bau prengus. Sempurna untuk sate, gulai, dan tongseng. Berat per 500gr.", rating:4.9, stock:12 },
+  { id:6,  name:"Daging Kambing Bagian Paha",price:120000,image:"https://images.unsplash.com/photo-1448907503123-67254d59ca4f?w=400&q=80", category:"Kambing",  description:"Paha kambing pilihan, dagingnya tebal dan gurih. Ideal untuk sate dan panggang. Berat per 500gr.", rating:4.7, stock:10 },
+  { id:7,  name:"Ayam Broiler Segar",       price:35000,  image:"https://images.unsplash.com/photo-1610057099431-d73a1c9d2f2f?w=400&q=80", category:"Ayam",    description:"Ayam broiler segar potong bersih. Cocok untuk berbagai masakan sehari-hari. Per ekor ~1.2kg.", rating:4.5, stock:50 },
+  { id:8,  name:"Ayam Kampung",             price:65000,  image:"https://images.unsplash.com/photo-1569288063643-5d29ad64df09?w=400&q=80", category:"Ayam",    description:"Ayam kampung asli, dagingnya lebih kenyal dan gurih. Cocok untuk opor dan soto. Per ekor ~0.8kg.", rating:4.8, stock:25 },
+  { id:9,  name:"Fillet Dada Ayam",         price:42000,  image:"https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400&q=80", category:"Ayam",    description:"Fillet dada ayam tanpa tulang, rendah lemak dan tinggi protein. Ideal untuk diet. Berat per 500gr.", rating:4.6, stock:40 },
+  { id:10, name:"Bakso Sapi Premium",       price:55000,  image:"https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=400&q=80", category:"Olahan",  description:"Bakso sapi bulat kenyal dengan isian daging cincang. Tanpa pengawet dan MSG berbahaya. Isi 20 biji.", rating:4.7, stock:35 },
+  { id:11, name:"Sosis Sapi Jumbo",         price:48000,  image:"https://images.unsplash.com/photo-1619881590738-a111d176d906?w=400&q=80", category:"Olahan",  description:"Sosis sapi jumbo tanpa kulit babi. Siap goreng/bakar. Isi 10 pcs per pack.", rating:4.4, stock:45 },
+  { id:12, name:"Rendang Daging Sapi",      price:85000,  image:"https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&q=80", category:"Olahan",  description:"Rendang daging sapi siap saji dengan bumbu rempah khas Minang. Tahan 3 hari tanpa kulkas. Per 250gr.", rating:4.9, stock:20 },
+];
+
+// ============================================================
+// STATE MANAGEMENT (LocalStorage)
+// ============================================================
+const LS = {
+  get: (k) => { try { return JSON.parse(localStorage.getItem(k)) } catch { return null } },
+  set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
+  del: (k) => localStorage.removeItem(k),
+};
+
+const getCart     = () => LS.get('fff_cart')     || [];
+const saveCart    = (c) => LS.set('fff_cart', c);
+const getOrders   = () => LS.get('fff_orders')   || [];
+const saveOrders  = (o) => LS.set('fff_orders', o);
+const getWishlist = () => LS.get('fff_wishlist') || [];
+const saveWishlist= (w) => LS.set('fff_wishlist', w);
+const getUsers    = () => LS.get('fff_users')    || [];
+const saveUsers   = (u) => LS.set('fff_users', u);
+const getSession  = () => LS.get('fff_session');
+const saveSession = (u) => LS.set('fff_session', u);
+const clearSession= () => LS.del('fff_session');
+
+// ============================================================
+// SEARCH STATE
+// ============================================================
+let searchQuery = '';
+
+// ============================================================
+// PAGE ROUTER
+// ============================================================
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const el = document.getElementById('page-' + name);
+  if (el) el.classList.add('active');
+
+  if (name === 'home')     renderHome();
+  if (name === 'products') renderProducts();
+  if (name === 'cart')     renderCart();
+  if (name === 'checkout') renderCheckout();
+  if (name === 'orders')   renderOrders();
+  if (name === 'wishlist') renderWishlist();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ============================================================
+// DARK MODE
+// ============================================================
+function toggleDark() {
+  document.documentElement.classList.toggle('dark');
+  const isDark = document.documentElement.classList.contains('dark');
+  LS.set('fff_dark', isDark);
+  document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
+  document.getElementById('icon-moon').classList.toggle('hidden', isDark);
+}
+function initDark() {
+  const isDark = LS.get('fff_dark');
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+    document.getElementById('icon-sun').classList.remove('hidden');
+    document.getElementById('icon-moon').classList.add('hidden');
+  }
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg, type = 'success') {
+  const container = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  container.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, 2500);
+}
+
+// ============================================================
+// FORMAT RUPIAH
+// ============================================================
+function rp(n) {
+  return 'Rp' + Number(n).toLocaleString('id-ID');
+}
+
+// ============================================================
+// RENDER NAVBAR AUTH
+// ============================================================
+function renderNavAuth() {
+  const session = getSession();
+  const el = document.getElementById('nav-auth');
+  if (session) {
+    el.innerHTML = `
+      <div class="flex items-center gap-1">
+        <button onclick="showPage('orders')" class="hidden md:flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-brand-500 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          Pesanan
+        </button>
+        <div class="relative group">
+          <button class="flex items-center gap-1.5 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 px-3 py-1.5 rounded-xl text-sm font-medium hover:bg-brand-100 transition">
+            <span class="w-6 h-6 bg-brand-500 rounded-full flex items-center justify-center text-white text-xs font-bold">${session.name.charAt(0).toUpperCase()}</span>
+            <span class="hidden md:inline">${session.name.split(' ')[0]}</span>
+          </button>
+          <div class="absolute right-0 top-10 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-2 w-40 hidden group-hover:block z-50">
+            <div class="px-3 py-1.5 text-xs text-gray-400 border-b border-gray-100 dark:border-gray-700 mb-1">${session.email}</div>
+            <button onclick="doLogout()" class="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+              Keluar
+            </button>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    el.innerHTML = `
+      <button onclick="showPage('login')" class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-brand-500 px-3 py-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition">Masuk</button>
+      <button onclick="showPage('register')" class="text-sm font-semibold bg-brand-500 text-white px-3 py-1.5 rounded-xl hover:bg-brand-600 transition shadow-sm">Daftar</button>`;
+  }
+  updateBadges();
+}
+
+// ============================================================
+// BADGES
+// ============================================================
+function updateBadges() {
+  const cartCount = getCart().reduce((s, i) => s + i.qty, 0);
+  const cb = document.getElementById('cart-badge');
+  cb.textContent = cartCount;
+  cb.classList.toggle('hidden', cartCount === 0);
+  if (cartCount > 0) { cb.classList.add('badge-pulse'); setTimeout(() => cb.classList.remove('badge-pulse'), 300); }
+
+  const wishCount = getWishlist().length;
+  const wb = document.getElementById('wishlist-badge');
+  wb.textContent = wishCount;
+  wb.classList.toggle('hidden', wishCount === 0);
+}
+
+// ============================================================
+// HOME RENDER
+// ============================================================
+function renderHome() {
+  const featured = PRODUCTS.filter(p => p.rating >= 4.7).slice(0, 4);
+  document.getElementById('home-featured').innerHTML = featured.map(p => productCardHTML(p)).join('');
+}
+
+// ============================================================
+// PRODUCT CARD HTML
+// ============================================================
+function productCardHTML(p) {
+  const inWishlist = getWishlist().includes(p.id);
+  const inCart = getCart().find(i => i.id === p.id);
+  const stars = '★'.repeat(Math.floor(p.rating)) + (p.rating % 1 >= 0.5 ? '½' : '');
+  return `
+    <div class="product-card bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm cursor-pointer group">
+      <div class="relative overflow-hidden" onclick="showDetail(${p.id})">
+        <img src="${p.image}" alt="${p.name}" class="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy"/>
+        <div class="absolute top-2 right-2">
+          <button onclick="event.stopPropagation(); toggleWishlist(${p.id})" 
+            class="w-8 h-8 rounded-full flex items-center justify-center shadow transition ${inWishlist ? 'bg-pink-500 text-white' : 'bg-white/90 text-gray-400 hover:text-pink-500'}">
+            <svg class="w-4 h-4" fill="${inWishlist ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="absolute bottom-2 left-2">
+          <span class="bg-brand-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">${p.category}</span>
+        </div>
+      </div>
+      <div class="p-3">
+        <h3 class="font-semibold text-sm text-gray-800 dark:text-gray-100 leading-tight mb-1 line-clamp-2 cursor-pointer hover:text-brand-600 dark:hover:text-brand-400 transition" onclick="showDetail(${p.id})">${p.name}</h3>
+        <div class="flex items-center gap-1 mb-2">
+          <span class="text-yellow-400 text-xs">${stars}</span>
+          <span class="text-xs text-gray-400">${p.rating}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-brand-600 dark:text-brand-400 text-sm">${rp(p.price)}</span>
+          <button onclick="event.stopPropagation(); addToCart(${p.id})" 
+            class="w-8 h-8 bg-brand-500 hover:bg-brand-600 text-white rounded-lg flex items-center justify-center transition shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// PRODUCTS PAGE
+// ============================================================
+let currentSearch = '';
+
+function renderProducts(list = null) {
+  const grid = document.getElementById('product-grid');
+  const noProduct = document.getElementById('no-product');
+  const products = list !== null ? list : applyFiltersInternal();
+  
+  if (products.length === 0) {
+    grid.innerHTML = '';
+    noProduct.classList.remove('hidden');
+  } else {
+    noProduct.classList.add('hidden');
+    grid.innerHTML = products.map(p => productCardHTML(p)).join('');
+  }
+}
+
+function applyFiltersInternal() {
+  const cat   = document.getElementById('filter-category')?.value || '';
+  const price = document.getElementById('filter-price')?.value || '';
+  const sort  = document.getElementById('filter-sort')?.value || '';
+
+  let list = [...PRODUCTS];
+
+  if (currentSearch) {
+    list = list.filter(p => p.name.toLowerCase().includes(currentSearch.toLowerCase()));
+  }
+  if (cat) list = list.filter(p => p.category === cat);
+  if (price) {
+    const [min, max] = price.split('-').map(Number);
+    list = list.filter(p => p.price >= min && p.price <= max);
+  }
+  if (sort === 'price-asc')  list.sort((a, b) => a.price - b.price);
+  if (sort === 'price-desc') list.sort((a, b) => b.price - a.price);
+  if (sort === 'name-asc')   list.sort((a, b) => a.name.localeCompare(b.name));
+
+  return list;
+}
+
+function applyFilters() { renderProducts(); }
+
+function handleSearch(val) {
+  currentSearch = val;
+  const info = document.getElementById('search-info');
+  if (val) {
+    info.classList.remove('hidden');
+    info.textContent = `Hasil pencarian: "${val}"`;
+  } else {
+    info.classList.add('hidden');
+  }
+  renderProducts();
+  // sync nav search
+  const navSearch = document.getElementById('nav-search');
+  if (navSearch && navSearch.value !== val) navSearch.value = val;
+}
+
+function filterByCategory(cat) {
+  showPage('products');
+  setTimeout(() => {
+    document.getElementById('filter-category').value = cat;
+    applyFilters();
+  }, 50);
+}
+
+// ============================================================
+// PRODUCT DETAIL
+// ============================================================
+function showDetail(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  const inWishlist = getWishlist().includes(p.id);
+  const cartItem = getCart().find(i => i.id === p.id);
+  const stars = Array.from({length:5}, (_, i) => `<span class="${i < Math.floor(p.rating) ? 'text-yellow-400' : 'text-gray-200 dark:text-gray-600'}">★</span>`).join('');
+
+  document.getElementById('detail-content').innerHTML = `
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="relative rounded-2xl overflow-hidden shadow-lg">
+        <img src="${p.image}" alt="${p.name}" class="w-full h-72 md:h-96 object-cover"/>
+        <div class="absolute top-4 left-4">
+          <span class="bg-brand-500 text-white text-sm px-3 py-1 rounded-full font-medium">${p.category}</span>
+        </div>
+        ${p.stock <= 5 ? `<div class="absolute top-4 right-4"><span class="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">Stok Terbatas!</span></div>` : ''}
+      </div>
+      <div class="flex flex-col justify-between">
+        <div>
+          <h1 class="font-display text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-2">${p.name}</h1>
+          <div class="flex items-center gap-2 mb-4">
+            <div class="flex">${stars}</div>
+            <span class="text-gray-500 dark:text-gray-400 text-sm">${p.rating} / 5.0</span>
+            <span class="text-gray-300 dark:text-gray-600">|</span>
+            <span class="text-gray-400 dark:text-gray-500 text-sm">Stok: ${p.stock}</span>
+          </div>
+          <div class="text-3xl font-black text-brand-600 dark:text-brand-400 mb-4">${rp(p.price)}<span class="text-sm font-normal text-gray-400">/500gr</span></div>
+          <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 mb-6">
+            <h3 class="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">Deskripsi Produk</h3>
+            <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">${p.description}</p>
+          </div>
+          <div class="flex flex-wrap gap-2 mb-6">
+            <span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs px-3 py-1 rounded-full font-medium">✓ Halal</span>
+            <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs px-3 py-1 rounded-full font-medium">✓ Segar</span>
+            <span class="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs px-3 py-1 rounded-full font-medium">✓ Vakum</span>
+            <span class="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs px-3 py-1 rounded-full font-medium">✓ Gratis Ongkir</span>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="addToCart(${p.id})" class="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-bold py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4"/></svg>
+            Tambah ke Keranjang
+          </button>
+          <button onclick="toggleWishlist(${p.id}); this.innerHTML='${inWishlist ? '🤍' : '❤️'}'" 
+            class="w-14 h-14 rounded-xl border-2 ${inWishlist ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20' : 'border-gray-200 dark:border-gray-600 hover:border-pink-400'} flex items-center justify-center text-xl transition">
+            ${inWishlist ? '❤️' : '🤍'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  showPage('detail');
+}
+
+// ============================================================
+// CART
+// ============================================================
+function addToCart(id) {
+  const session = getSession();
+  if (!session) { showToast('Silakan login terlebih dahulu', 'error'); showPage('login'); return; }
+
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  const cart = getCart();
+  const idx = cart.findIndex(i => i.id === id);
+  if (idx >= 0) {
+    if (cart[idx].qty >= p.stock) { showToast('Stok tidak mencukupi', 'error'); return; }
+    cart[idx].qty++;
+  } else {
+    cart.push({ id: p.id, name: p.name, price: p.price, image: p.image, qty: 1 });
+  }
+  saveCart(cart);
+  updateBadges();
+  showToast(`${p.name} ditambahkan ke keranjang 🛒`);
+}
+
+function renderCart() {
+  const cart = getCart();
+  const empty = document.getElementById('cart-empty');
+  const content = document.getElementById('cart-content');
+  if (cart.length === 0) { empty.classList.remove('hidden'); content.classList.add('hidden'); return; }
+  empty.classList.add('hidden'); content.classList.remove('hidden');
+
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  document.getElementById('cart-subtotal').textContent = rp(total);
+  document.getElementById('cart-total').textContent = rp(total);
+
+  document.getElementById('cart-items').innerHTML = cart.map(item => `
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 flex gap-4 shadow-sm">
+      <img src="${item.image}" alt="${item.name}" class="w-20 h-20 object-cover rounded-xl flex-shrink-0"/>
+      <div class="flex-1 min-w-0">
+        <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-sm leading-tight mb-1">${item.name}</h4>
+        <p class="text-brand-600 dark:text-brand-400 font-bold text-sm mb-3">${rp(item.price)}</p>
+        <div class="flex items-center gap-2">
+          <button onclick="updateCartQty(${item.id}, ${item.qty - 1})" class="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition font-bold text-lg leading-none">−</button>
+          <span class="w-8 text-center font-semibold text-sm dark:text-white">${item.qty}</span>
+          <button onclick="updateCartQty(${item.id}, ${item.qty + 1})" class="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition font-bold text-lg leading-none">+</button>
+          <span class="ml-auto font-bold text-gray-700 dark:text-gray-200 text-sm">${rp(item.price * item.qty)}</span>
+          <button onclick="removeFromCart(${item.id})" class="ml-2 text-red-400 hover:text-red-600 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function updateCartQty(id, qty) {
+  const product = PRODUCTS.find(p => p.id === id);
+  if (qty < 1) { removeFromCart(id); return; }
+  if (product && qty > product.stock) { showToast('Stok tidak mencukupi', 'error'); return; }
+  const cart = getCart();
+  const idx = cart.findIndex(i => i.id === id);
+  if (idx >= 0) { cart[idx].qty = qty; saveCart(cart); }
+  updateBadges();
+  renderCart();
+}
+
+function removeFromCart(id) {
+  const cart = getCart().filter(i => i.id !== id);
+  saveCart(cart);
+  updateBadges();
+  renderCart();
+  showToast('Produk dihapus dari keranjang', 'info');
+}
+
+function proceedCheckout() {
+  const session = getSession();
+  if (!session) { showToast('Silakan login terlebih dahulu', 'error'); showPage('login'); return; }
+  if (getCart().length === 0) { showToast('Keranjang masih kosong', 'error'); return; }
+  showPage('checkout');
+}
+
+// ============================================================
+// CHECKOUT
+// ============================================================
+function renderCheckout() {
+  const cart = getCart();
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  document.getElementById('co-subtotal').textContent = rp(total);
+  document.getElementById('co-total').textContent = rp(total);
+  document.getElementById('checkout-items').innerHTML = cart.map(i => `
+    <div class="flex items-center gap-3">
+      <img src="${i.image}" alt="${i.name}" class="w-12 h-12 object-cover rounded-lg flex-shrink-0"/>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">${i.name}</p>
+        <p class="text-xs text-gray-400">${i.qty}x ${rp(i.price)}</p>
+      </div>
+      <span class="text-sm font-bold text-gray-700 dark:text-gray-200">${rp(i.price * i.qty)}</span>
+    </div>`).join('');
+  
+  // Pre-fill user name
+  const session = getSession();
+  if (session) document.getElementById('co-name').value = session.name;
+}
+
+function submitOrder() {
+  const name    = document.getElementById('co-name').value.trim();
+  const address = document.getElementById('co-address').value.trim();
+  const phone   = document.getElementById('co-phone').value.trim();
+
+  let valid = true;
+  const hide = (id) => document.getElementById(id).classList.add('hidden');
+  const show = (id) => document.getElementById(id).classList.remove('hidden');
+
+  hide('err-name'); hide('err-address'); hide('err-phone');
+
+  if (!name) { show('err-name'); valid = false; }
+  if (!address) { show('err-address'); valid = false; }
+  if (!phone || !/^08[0-9]{8,11}$/.test(phone)) { show('err-phone'); valid = false; }
+  if (!valid) return;
+
+  const cart = getCart();
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const orderId = 'FFF-' + Date.now().toString(36).toUpperCase();
+  const payment = document.getElementById('co-payment').value;
+  const note    = document.getElementById('co-note').value.trim();
+  const session = getSession();
+
+  const order = {
+    id: orderId,
+    date: new Date().toLocaleString('id-ID'),
+    items: [...cart],
+    total,
+    name,
+    address,
+    phone,
+    payment,
+    note,
+    userId: session?.email,
+    status: 'Menunggu Konfirmasi',
+  };
+
+  const orders = getOrders();
+  orders.unshift(order);
+  saveOrders(orders);
+  saveCart([]);
+  updateBadges();
+
+  // Show success page
+  document.getElementById('order-id-display').textContent = orderId;
+  document.getElementById('order-summary-success').innerHTML = `
+    <div class="space-y-2 text-sm">
+      <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Nama</span><span class="font-medium dark:text-white">${name}</span></div>
+      <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Alamat</span><span class="font-medium text-right max-w-xs dark:text-white">${address}</span></div>
+      <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">No HP</span><span class="font-medium dark:text-white">${phone}</span></div>
+      <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Pembayaran</span><span class="font-medium dark:text-white capitalize">${payment}</span></div>
+      <div class="flex justify-between border-t border-gray-100 dark:border-gray-700 pt-2"><span class="font-bold dark:text-white">Total</span><span class="font-black text-brand-600 dark:text-brand-400">${rp(total)}</span></div>
+    </div>`;
+
+  showPage('success');
+  showToast('Pesanan berhasil dikonfirmasi! 🎉');
+}
+
+// ============================================================
+// ORDER HISTORY
+// ============================================================
+function renderOrders() {
+  const session = getSession();
+  const allOrders = getOrders();
+  const orders = session ? allOrders.filter(o => o.userId === session.email) : [];
+  const empty = document.getElementById('orders-empty');
+  const list  = document.getElementById('orders-list');
+
+  if (orders.length === 0) { empty.classList.remove('hidden'); list.innerHTML = ''; return; }
+  empty.classList.add('hidden');
+
+  list.innerHTML = orders.map(o => `
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
+        <div>
+          <span class="font-mono font-bold text-brand-600 dark:text-brand-400 text-sm">${o.id}</span>
+          <span class="text-gray-400 text-xs ml-3">${o.date}</span>
+        </div>
+        <span class="inline-block bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs px-3 py-1 rounded-full font-semibold">${o.status}</span>
+      </div>
+      <div class="space-y-2 mb-4">
+        ${o.items.map(i => `
+          <div class="flex items-center gap-3">
+            <img src="${i.image}" alt="${i.name}" class="w-10 h-10 object-cover rounded-lg"/>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">${i.name}</p>
+              <p class="text-xs text-gray-400">${i.qty}x ${rp(i.price)}</p>
+            </div>
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">${rp(i.price * i.qty)}</span>
+          </div>`).join('')}
+      </div>
+      <div class="border-t border-gray-100 dark:border-gray-700 pt-3 flex flex-col md:flex-row md:items-center justify-between gap-2">
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+          <span class="font-medium text-gray-700 dark:text-gray-200">Dikirim ke:</span> ${o.name}, ${o.address}
+        </div>
+        <div class="font-black text-brand-600 dark:text-brand-400">${rp(o.total)}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ============================================================
+// WISHLIST
+// ============================================================
+function toggleWishlist(id) {
+  const wl = getWishlist();
+  const idx = wl.indexOf(id);
+  if (idx >= 0) { wl.splice(idx, 1); showToast('Dihapus dari wishlist', 'info'); }
+  else { wl.push(id); showToast('Ditambahkan ke wishlist ❤️'); }
+  saveWishlist(wl);
+  updateBadges();
+  // refresh if on wishlist page
+  if (document.getElementById('page-wishlist').classList.contains('active')) renderWishlist();
+  // refresh product grids
+  if (document.getElementById('page-products').classList.contains('active')) renderProducts();
+  if (document.getElementById('page-home').classList.contains('active')) renderHome();
+}
+
+function renderWishlist() {
+  const wl = getWishlist();
+  const products = PRODUCTS.filter(p => wl.includes(p.id));
+  const empty = document.getElementById('wishlist-empty');
+  const grid  = document.getElementById('wishlist-grid');
+  if (products.length === 0) { empty.classList.remove('hidden'); grid.innerHTML = ''; return; }
+  empty.classList.add('hidden');
+  grid.innerHTML = products.map(p => productCardHTML(p)).join('');
+}
+
+// ============================================================
+// AUTHENTICATION
+// ============================================================
+function doRegister() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-pass').value;
+  const pass2 = document.getElementById('reg-pass2').value;
+
+  const hide = (id) => document.getElementById(id).classList.add('hidden');
+  const show = (id, msg) => { const el = document.getElementById(id); el.classList.remove('hidden'); if(msg) el.textContent = msg; };
+
+  hide('reg-err-name'); hide('reg-err-email'); hide('reg-err-pass'); hide('reg-err-pass2');
+
+  let valid = true;
+  if (!name) { show('reg-err-name'); valid = false; }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { show('reg-err-email', 'Format email tidak valid'); valid = false; }
+  if (pass.length < 6) { show('reg-err-pass'); valid = false; }
+  if (pass !== pass2) { show('reg-err-pass2'); valid = false; }
+  if (!valid) return;
+
+  const users = getUsers();
+  if (users.find(u => u.email === email)) { show('reg-err-email', 'Email sudah terdaftar'); return; }
+
+  users.push({ name, email, password: pass });
+  saveUsers(users);
+  saveSession({ name, email });
+  renderNavAuth();
+  showPage('home');
+  showToast(`Selamat datang, ${name}! 🎉`);
+}
+
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const err   = document.getElementById('login-err');
+  err.classList.add('hidden');
+
+  if (!email || !pass) { err.textContent = 'Email dan password wajib diisi'; err.classList.remove('hidden'); return; }
+
+  const users = getUsers();
+  const user = users.find(u => u.email === email && u.password === pass);
+  if (!user) { err.textContent = 'Email atau password salah'; err.classList.remove('hidden'); return; }
+
+  saveSession({ name: user.name, email: user.email });
+  renderNavAuth();
+  showPage('home');
+  showToast(`Selamat datang kembali, ${user.name}! 👋`);
+}
+
+function doLogout() {
+  clearSession();
+  renderNavAuth();
+  showPage('home');
+  showToast('Berhasil keluar', 'info');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  initDark();
+  renderNavAuth();
+  renderHome();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
