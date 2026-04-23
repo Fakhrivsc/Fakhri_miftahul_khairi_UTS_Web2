@@ -54,7 +54,7 @@ Sistem ini dibangun sebagai proyek **Full Client-Side** menggunakan arsitektur r
 
 Aplikasi telah berhasil dideploy dan dapat diakses secara publik melalui tautan berikut:
 
-👉 **[Live Demo Triple-F Store di GitHub Pages](#)*https://fakhrivsc.github.io/Fakhri_miftahul_khairi_UTS_Web2/* ← *(ganti dengan link GitHub Pages kamu)*
+👉 **[Live Demo Triple-F Store di GitHub Pages](#)*https://fakhrivsc.github.io/Fakhri_miftahul_khairi_UTS_Web2/**
 
 ---
 
